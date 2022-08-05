@@ -3,14 +3,16 @@ from __future__ import annotations
 import logging
 from functools import cached_property
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import AnyUrl
 from rolldet import Detector
 
 from api import __version__
 from api.models import MessageResponse, RollDetResponse, VersionResponse
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 app = FastAPI(debug=True)
 
@@ -50,11 +52,9 @@ async def hello(name: str) -> MessageResponse:
 
 
 @app.get("/rolldet/{url:path}", response_model=RollDetResponse)
-async def rolldet(url: str, request: Request) -> RollDetResponse:
+async def rolldet(url: AnyUrl) -> RollDetResponse:
     logger.info(f"GET /rolldet/{url}")
-    x_url = request.path_params.get("url")
-    x_query = request.query_params
-    full_url = f"{x_url}?{x_query}"
+    full_url = str(url)
 
     # noinspection HttpUrlsUsage
     if not full_url.startswith(("https://", "http://")):
