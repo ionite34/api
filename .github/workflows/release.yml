@@ -1,14 +1,19 @@
-name: Publish to PyPI
-
+name: Release
 on:
-  workflow_call:
   workflow_dispatch:
-  release:
-    types: [published]
+    inputs:
+      bump:
+        type: choice
+        description: How to bump the version
+        required: true
+        options:
+          - major
+          - minor
+          - patch
 
 jobs:
-  publish:
-    name: Publish to PyPI
+  release:
+    name: Release
     runs-on: ubuntu-latest
     env:
       os: ubuntu-latest
