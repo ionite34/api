@@ -54,6 +54,11 @@ jobs:
       run: |
         poetry install
 
+    - name: Configure git
+      run: |
+        git config --global user.name 'Release bot'
+        git config --global user.email 'action@github.com'
+
     - name: Bump release version and tag
       run: |
         poetry version ${{ github.event.inputs.bump }}
