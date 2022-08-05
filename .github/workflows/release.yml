@@ -32,10 +32,7 @@ jobs:
         wait-interval: 10
 
     - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        # Personal Access Token
-        token: ${{ secrets.DEPLOY_TOKEN }}
+      uses: actions/checkout@v3
 
     - name: Cache Poetry
       uses: actions/cache@v2
@@ -57,12 +54,6 @@ jobs:
       run: |
         poetry install
 
-    - name: Configure git
-      run: |
-        git config --global user.name 'Release bot'
-        git config --global user.email 'action@github.com'
-        git push
-
     - name: Bump release version and tag
       run: |
         poetry version ${{ github.event.inputs.bump }}
@@ -76,7 +67,10 @@ jobs:
         export NEW_VERSION=v$(poetry version -s)
         git commit -am "Prepatching to $NEW_VERSION"
 
-    - name: Push results
-      run: |
-        git push "https://$GITHUB_ACTOR:${{ secrets.DEPLOY_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
-        git push "https://$GITHUB_ACTOR:${{ secrets.DEPLOY_TOKEN }}@github.com/$GITHUB_REPOSITORY.git" --tags
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v4
+      with:
+        commit-message: version bump
+        title: Version Release for $NEW_VERSION
+        branch: release-staging
+        base: main
