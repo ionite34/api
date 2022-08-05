@@ -20,6 +20,7 @@ flake8 = "^5.0.4"
 mypy = "^0.971"
 poethepoet = "^0.16.0"
 requests = "^2.28.1"
+pre-commit = "^2.20.0"
 
 [tool.poe.tasks]
 autoformat.sequence = [

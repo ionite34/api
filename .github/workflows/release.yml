@@ -1,0 +1,77 @@
+name: Publish to PyPI
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: Publish to PyPI
+    runs-on: ubuntu-latest
+    env:
+      os: ubuntu-latest
+      poetry-cache: ~/.cache/pypoetry
+      python: '3.10'
+      poetry: '1.1.13'
+
+    steps:
+    - name: Wait for tests to succeed
+      uses: lewagon/wait-on-check-action@v1.0.0
+      with:
+        ref: ${{ github.ref }}
+        running-workflow-name: publish
+        check-regexp: Coverage.?
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        wait-interval: 10
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        # Personal Access Token
+        token: ${{ secrets.DEPLOY_TOKEN }}
+
+    - name: Cache Poetry
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pypoetry
+        key: poetry-cache-${{ env.os }}-${{ env.poetry-cache }}-${{ env.python }}-${{ env.poetry }}-${{ hashFiles('**/poetry.lock') }}-${{ hashFiles('.github/workflows/release.yml') }}
+
+    - name: Setup Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ env.python }}
+
+    - name: Run Poetry image
+      uses: abatilo/actions-poetry@v2.0.0
+      with:
+        poetry-version: ${{ env.poetry }}
+
+    - name: Install requirements
+      run: |
+        poetry install
+
+    - name: Configure git
+      run: |
+        git config --global user.name 'Release bot'
+        git config --global user.email 'action@github.com'
+        git push
+
+    - name: Bump release version and tag
+      run: |
+        poetry version ${{ github.event.inputs.bump }}
+        export NEW_VERSION=v$(poetry version -s)
+        git commit -am "Bumping to version $NEW_VERSION"
+        git tag -a $NEW_VERSION -m $NEW_VERSION
+
+    - name: Run poetry prepatch to next version
+      run: |
+        poetry version prepatch
+        export NEW_VERSION=v$(poetry version -s)
+        git commit -am "Prepatching to $NEW_VERSION"
+
+    - name: Push results
+      run: |
+        git push "https://$GITHUB_ACTOR:${{ secrets.DEPLOY_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
+        git push "https://$GITHUB_ACTOR:${{ secrets.DEPLOY_TOKEN }}@github.com/$GITHUB_REPOSITORY.git" --tags
