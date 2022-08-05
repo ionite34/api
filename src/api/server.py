@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import logging
 from functools import cached_property
+from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from pydantic import AnyUrl
 from rolldet import Detector
 
@@ -23,6 +25,26 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def custom_openapi() -> dict[str, Any]:
+    """Custom OpenAPI generator"""
+    if app.openapi_schema:  # caching
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="Ionite API",
+        version=__version__,
+        description="https://github.com/ionite34/api",
+        routes=app.routes,
+    )
+    openapi_schema["info"]["x-logo"] = {
+        "url": "https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png"
+    }
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi  # type: ignore
 
 
 class RunnerStore:
@@ -52,9 +74,12 @@ async def hello(name: str) -> MessageResponse:
 
 
 @app.get("/rolldet/{url:path}", response_model=RollDetResponse)
-async def rolldet(url: AnyUrl) -> RollDetResponse:
+async def rolldet(url: AnyUrl, request: Request) -> RollDetResponse:
     logger.info(f"GET /rolldet/{url}")
     full_url = str(url)
+    # If parameter present
+    if q := request.query_params:
+        full_url = f"{full_url}?{q}"
 
     # noinspection HttpUrlsUsage
     if not full_url.startswith(("https://", "http://")):
