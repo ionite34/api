@@ -6,6 +6,7 @@ authors = ["ionite34 <dev@ionite.io>"]
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.11"
+google-cloud-datastore = "^2.8.1"
 fastapi = "^0.79.0"
 fastapi-camelcase = "^1.0.5"
 uvicorn = "^0.18.2"
@@ -74,5 +75,5 @@ sequence = [
 
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.1.0"]
 build-backend = "poetry.core.masonry.api"
