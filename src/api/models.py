@@ -38,7 +38,8 @@ class RollDetResponse(CamelModel):
         return cls(
             url=str(data.get("url")),
             redirect_url=(
-                str(data.get("redirect_url")) if data.get("redirect_url") else None
+                str(data.get("redirect_url")) if data.get(
+                    "redirect_url") else None
             ),
             is_roll=data.get("is_roll"),
             error=data.get("error") if data.get("error") else None,
